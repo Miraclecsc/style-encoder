@@ -1,0 +1,52 @@
+    # for batch_idx, batch in enumerate(dataloader):
+    #     images = batch["images"].to(device)
+    #     input_ids = batch["input_ids"].to(device)
+        
+
+    #     # Correctly access the attribute vectors in the batch
+    #     batch_attribute_vectors = torch.stack([dataset.attribute_vectors[image_ids] for image_ids in batch["image_ids"]],dim=0) 
+
+    #     # 修改 train 函数中的相关部分：
+    #     for step in range(max_train_steps_per_image):
+    #         batch_loss = torch.tensor(0.0, device=device, requires_grad=True)
+    #         # Perform forward pass for the entire batch
+    #         for i, attribute_vector in enumerate(batch_attribute_vectors):
+    #             image = images[i].unsqueeze(0)
+    #             input_id = input_ids[i].unsqueeze(0)
+                
+    #             # 保持 VAE 编码部分不变
+    #             with torch.no_grad():
+    #                 model_input = vae.encode(image).latent_dist.sample() * vae.config.scaling_factor
+                    
+    #             noise = torch.randn_like(model_input)
+    #             timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (len(image),), device=model_input.device).long()
+    #             noisy_model_input = noise_scheduler.add_noise(model_input, noise, timesteps)
+                
+    #             # 这部分需要跟踪梯度
+    #             final_embeddings = get_final_embeddings(text_encoder, input_id, attribute_vector=attribute_vector, pos=batch["pos"][i].unsqueeze(0))
+    #             output = text_encoder.text_model(input_ids=input_id, hidden_states=final_embeddings)
+    #             encoder_hidden_states = output[0]
+                
+    #             model_pred = unet(noisy_model_input, timesteps, encoder_hidden_states, return_dict=False)[0]
+    #             target = noise
+                
+    #             loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+    #             batch_loss = batch_loss + loss
+
+    #         optimizer.zero_grad()
+    #         batch_loss.backward()
+    #         optimizer.step()
+
+    #         global_step += 1
+    #         progress_bar.update(1)
+
+    #         if (step + 1) % 50 == 0:
+    #             # Save each image's attribute vector after every 100 steps
+    #             for i, attribute_vector in enumerate(batch_attribute_vectors):
+    #                 # Save each attribute vector individually
+    #                 attr_copy = attribute_vector.detach().cpu().clone()
+    #                 image_path = batch["image_path"][i]  # Get the corresponding image path
+    #                 torch.save(attr_copy, os.path.join("/data2/changshuochen/model/style-embedding", f"attribute_{image_path.split('/')[-1]}_step_{step + 1}.pt"))
+
+    #     print(f"Completed training for batch {batch_idx + 1}")
+    
