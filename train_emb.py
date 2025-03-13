@@ -11,13 +11,12 @@ import json
 import os
 import diffusers
 from diffusers import AutoencoderKL, PNDMScheduler, UNet2DConditionModel
-from transformers import CLIPModel
 from torchvision import transforms
 
 # Define paths
 stable_diffusion_path = "/data2/changshuochen/model/stable-diffusion-v1-4"
 clip_path = "/data2/changshuochen/model/clip-vit-large-patch14-local"
-device = "cuda:3"  # Use a single GPU (cuda:0)
+device = "cuda:0"  # Use a single GPU (cuda:0)
 
 # Function to get final embeddings with the attribute vector
 def get_final_embeddings_single(_text_encoder, input_ids, attribute_vector=None, pos=None):
@@ -147,6 +146,9 @@ def train(dataset, batch_size, max_train_steps_per_image, global_step):
 
     # progress_bar = tqdm(range(len(dataset) * max_train_steps_per_image), desc="Training Steps")
     progress_bar = tqdm(range(len(dataloader) * max_train_steps_per_image), desc="Training Steps")
+    
+    output_dir = "/data2/changshuochen/model/style-embedding"
+    resume_mode = True  # 初始状态下开启断点检查
 
     # Training loop
 
@@ -154,6 +156,24 @@ def train(dataset, batch_size, max_train_steps_per_image, global_step):
         images = batch["images"].to(device)
         input_ids = batch["input_ids"].to(device)
         batch_pos = batch["pos"].to(device)  # 确保 pos 也是 tensor
+        
+        if resume_mode:
+            # 检查当前 batch 中所有图像是否已经存在最终 checkpoint 文件
+            skip_batch = True
+            for image_path in batch["image_path"]:
+                filename = f"attribute_{os.path.basename(image_path)}_step_{max_train_steps_per_image}.pt"
+                output_file = os.path.join(output_dir, filename)
+                if not os.path.exists(output_file):
+                    skip_batch = False
+                    break
+            if skip_batch:
+                # print(f"Skipping batch {batch_idx} because final checkpoint exists")
+                progress_bar.update(200)
+                continue
+            else:
+                # 一旦有一个 batch 没有全都有 checkpoint，就关闭后续检查
+                resume_mode = False   
+                print(f"Resuming training from batch {batch_idx}")         
 
         # 将 attribute vector 批次化
         batch_attribute_vectors = torch.stack(
@@ -202,8 +222,8 @@ def train(dataset, batch_size, max_train_steps_per_image, global_step):
 
 def main():
     dataset = StyleDataset(
-        image_data_root='/data2/changshuochen/model/style30k/new_splits/split_4/images', 
-        prompts_root='/data2/changshuochen/model/style30k/new_splits/split_4/captions_4.json',
+        image_data_root='/data2/changshuochen/model/style30k/new_splits/split_3/images', 
+        prompts_root='/data2/changshuochen/model/style30k/new_splits/split_3/captions_3.json',
         tokenizer=AutoTokenizer.from_pretrained(stable_diffusion_path, subfolder="tokenizer"),
         size=512,
         tokenizer_max_length=77

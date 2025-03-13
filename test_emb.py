@@ -1,16 +1,17 @@
 import torch
-from transformers import AutoTokenizer, CLIPTextModel
+from transformers import AutoTokenizer
 from diffusers import AutoencoderKL, UNet2DConditionModel, PNDMScheduler, DiffusionPipeline
 from PIL import Image
 import os
 import numpy as np
 import json
 import random
+from my_clip.modeling_clip import CLIPTextModel
 
 # Paths to the models and saved attribute vectors
-stable_diffusion_path = "/home/changshuochen/model/stable-diffusion-v1-4"
-clip_path = "/home/changshuochen/model/clip-vit-large-patch14-local"
-attribute_vector_path = "/home/changshuochen/model/style-embedding"
+stable_diffusion_path = "/data2/changshuochen/model/stable-diffusion-v1-4"
+clip_path = "/data2/changshuochen/model/clip-vit-large-patch14-local"
+attribute_vector_path = "/data2/changshuochen/model/style-embedding"
 device = "cuda:3"  # Use a single GPU (cuda:0)
 
 # Load the models
@@ -39,7 +40,29 @@ def get_final_embeddings(_text_encoder, input_ids, attribute_vector=None, pos=No
     final_embeddings = original_token_embeddings + position_embeddings
     return final_embeddings
 
-json_path = "/home/changshuochen/model/image_captions_shuffle.json"
+def get_final_embeddings_single(_text_encoder, input_ids, attribute_vector=None, pos=None):
+    embeddings_layer = _text_encoder.text_model.embeddings
+    token_embed = embeddings_layer.token_embedding
+    pos_embed = embeddings_layer.position_embedding
+    pos_ids = embeddings_layer.position_ids
+
+    original_token_embeddings = token_embed(input_ids)  # [batch, seq_len, hidden_dim]
+    print(original_token_embeddings.shape)
+    position_embeddings = pos_embed(pos_ids[:, :input_ids.shape[1]])  # [1, seq_len, hidden_dim]
+    print(position_embeddings.shape)
+
+    if attribute_vector is not None and pos is not None:
+        # for i in range(len(pos)):
+        pos_sks = pos
+        end_embeddings = original_token_embeddings[:, pos_sks + 1: pos_sks + 3, :]
+        original_token_embeddings[:, pos_sks: pos_sks + 8, :] = attribute_vector
+        original_token_embeddings[:, pos_sks + 8: pos_sks + 10, :] = end_embeddings
+
+    final_embeddings = original_token_embeddings + position_embeddings
+    return final_embeddings
+
+# json_path = "/home/changshuochen/model/image_captions_shuffle.json"
+json_path = "/data2/changshuochen/model/style30k/image_captions.json"
 with open(json_path, 'r') as f:
     captions_data = json.load(f)
 # 创建image_path到caption的字典
@@ -60,7 +83,7 @@ def generate_image(text_prompt, attribute_vector, pt_filename, height=512, width
     inputs = tokenizer(text_prompt, padding="max_length", truncation=True, max_length=77, return_tensors="pt").to(device)
 
     # Use the attribute vector to modify the style
-    final_embeddings = get_final_embeddings(text_encoder, inputs["input_ids"], attribute_vector=attribute_vector, pos=inputs["attention_mask"].sum() - 3)
+    final_embeddings = get_final_embeddings_single(text_encoder, inputs["input_ids"], attribute_vector=attribute_vector, pos=inputs["attention_mask"].sum() - 3)
 
     # Forward pass through the text encoder
     output = text_encoder.text_model(input_ids=inputs["input_ids"], hidden_states=final_embeddings)
@@ -68,7 +91,8 @@ def generate_image(text_prompt, attribute_vector, pt_filename, height=512, width
     generated_images = pipeline(prompt_embeds=encoder_hidden_states, num_inference_steps=50, guidance_scale=7.5).images
     
     # 创建输出目录
-    output_dir = "/home/changshuochen/model/generated_images_shuffle"
+    # output_dir = "/home/changshuochen/model/generated_images_shuffle"
+    output_dir = "/data2/changshuochen/model/generated_images_emb"
     os.makedirs(output_dir, exist_ok=True)
     
     # 使用 .pt 文件名作为基础，将扩展名改为 .png
