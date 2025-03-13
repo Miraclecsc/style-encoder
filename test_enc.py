@@ -15,11 +15,11 @@ device = "cuda:0"
 
 # 路径设置
 image_data_root = '/data2/changshuochen/model/style30k/images'
-prompts_root = '/data2/changshuochen/model/style30k/new.json'
+prompts_root = '/data2/changshuochen/model/style30k/image_captions.json'
 clip_path = '/data2/changshuochen/model/clip-vit-large-patch14-local'
 stable_diffusion_path = '/data2/changshuochen/model/stable-diffusion-v1-4'
 model_dir = '/data2/changshuochen/model/encoder-models'
-vision_mapping_model_path = os.path.join(model_dir, "vision_mapping_model_finetuned_epoch5.pt")
+vision_mapping_model_path = os.path.join(model_dir, "vision_mapping_model.pt")
 
 # 图像预处理（保持和训练时一致）
 image_size = 224  # 可根据需要调整
@@ -110,7 +110,7 @@ def main():
     
     # 测试若干个样本，这里以前 5 个为例
     num_test_samples = 500
-    output_dir = "/data2/changshuochen/model/generated_images_simple"
+    output_dir = "/data2/changshuochen/model/generated_images_new"
     os.makedirs(output_dir, exist_ok=True)
     for idx in tqdm(range(num_test_samples), desc="Testing Samples"):
         image, caption, pth = get_sample(idx)

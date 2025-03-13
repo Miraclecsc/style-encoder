@@ -1,11 +1,11 @@
 import os
 from PIL import Image
-
+import matplotlib.pyplot as plt
 
 # 原始图片和重构图片的路径
-original_images_dir = '/data2/changshuochen/model/style30k/images'
-generated_images_dir = '/data2/changshuochen/model/generated_images_emb'
-output_dir = '/data2/changshuochen/model/output_images_emb'  # 输出的图像目录
+original_images_dir = '/home/changshuochen/model/splits/split_0/images'
+generated_images_dir = '/home/changshuochen/model/generated_images_new'
+output_dir = '/home/changshuochen/model/output_images_new'  # 输出的图像目录
 
 # 创建输出目录（如果不存在）
 os.makedirs(output_dir, exist_ok=True)

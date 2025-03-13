@@ -92,7 +92,7 @@ def generate_image(text_prompt, attribute_vector, pt_filename, height=512, width
     
     # 创建输出目录
     # output_dir = "/home/changshuochen/model/generated_images_shuffle"
-    output_dir = "/data2/changshuochen/model/generated_images_emb"
+    output_dir = "/data2/changshuochen/model/generated_images"
     os.makedirs(output_dir, exist_ok=True)
     
     # 使用 .pt 文件名作为基础，将扩展名改为 .png

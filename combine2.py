@@ -3,9 +3,9 @@ import os
 from pathlib import Path
 
 # 定义路径
-path1 = "/data2/changshuochen/model/generated_images_simple"   # 右侧图片路径
+path1 = "/data2/changshuochen/model/generated_images_new"   # 右侧图片路径
 path2 = "/data2/changshuochen/model/style30k/images"    # 左侧图片路径
-output_dir = "/data2/changshuochen/model/combined_images_simple"  # 输出目录
+output_dir = "/data2/changshuochen/model/combined_images_new"  # 输出目录
 
 # 支持的图片格式
 supported_ext = ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff')

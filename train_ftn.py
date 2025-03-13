@@ -27,7 +27,7 @@ device = "cuda:0"
 
 batch_size = 8
 num_epochs = 5
-learning_rate = 1e-4
+learning_rate = 2e-4
 
 # 初始化wandb
 wandb.init(project="style-encoder-finetuning", 
@@ -139,8 +139,8 @@ vision_mapping_model.train()
 
 optimizer = AdamW(vision_mapping_model.parameters(), lr=learning_rate, eps=1e-8)
 # 添加学习率调度器
-# lr_scheduler = ExponentialLR(optimizer, T_max=num_epochs * len(dataloader))
-lr_scheduler = StepLR(optimizer, step_size=1, gamma=0.85)
+lr_scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs * len(dataloader))
+# lr_scheduler = StepLR(optimizer, step_size=1, gamma=0.85)
 
 # -------------------------------
 # 5. 定义 get_final_embeddings 函数（用于将 attribute vector 注入到文本 embedding 中）
@@ -217,6 +217,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        lr_scheduler.step()
         
         # 累计epoch损失
         epoch_loss += loss.item()
@@ -236,7 +237,6 @@ for epoch in range(num_epochs):
         "epoch": epoch + 1,
         "epoch_loss": avg_epoch_loss
     })
-    lr_scheduler.step()
     print(f"Epoch {epoch+1}/{num_epochs} finished. Average loss: {avg_epoch_loss:.4f}")
 
     # -------------------------------
