@@ -5,13 +5,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoTokenizer
 from my_clip.modeling_clip import CLIPTextModel
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, DiffusionPipeline
 from PIL import Image
 from torchvision import transforms
 from tqdm import tqdm
 import random
 
-device = "cuda:0"
+device = "cuda:1"
 
 # 路径设置
 image_data_root = '/data2/changshuochen/model/style30k/images'
@@ -19,7 +19,7 @@ prompts_root = '/data2/changshuochen/model/style30k/image_captions.json'
 clip_path = '/data2/changshuochen/model/clip-vit-large-patch14-local'
 stable_diffusion_path = '/data2/changshuochen/model/stable-diffusion-v1-4'
 model_dir = '/data2/changshuochen/model/encoder-models'
-vision_mapping_model_path = os.path.join(model_dir, "vision_mapping_model.pt")
+vision_mapping_model_path = os.path.join(model_dir, "vision_mapping_model_finetuned_epoch1.pt")
 
 # 图像预处理（保持和训练时一致）
 image_size = 224  # 可根据需要调整
@@ -109,8 +109,8 @@ def main():
     pipeline.set_progress_bar_config(disable=True)
     
     # 测试若干个样本，这里以前 5 个为例
-    num_test_samples = 500
-    output_dir = "/data2/changshuochen/model/generated_images_new"
+    num_test_samples = 1000
+    output_dir = "/data2/changshuochen/model/generated_images_0318"
     os.makedirs(output_dir, exist_ok=True)
     for idx in tqdm(range(num_test_samples), desc="Testing Samples"):
         image, caption, pth = get_sample(idx)

@@ -23,7 +23,7 @@ model_dir = '/data2/changshuochen/model/encoder-models'
 vision_mapping_model_path = os.path.join(model_dir, "vision_mapping_model.pt")
 stable_diffusion_path = '/data2/changshuochen/model/stable-diffusion-v1-4'
 clip_path = '/data2/changshuochen/model/clip-vit-large-patch14-local'
-device = "cuda:0"
+device = "cuda:3"
 
 batch_size = 8
 num_epochs = 5
@@ -78,7 +78,7 @@ def collate_fn(batch):
     return {"image": images, "caption": captions, "image_path": image_paths}
 
 dataset = ImageCaptionDataset(image_data_root, prompts_root, transform=transform)
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=4)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
 
 # -------------------------------
 # 3. 加载模型（文本 encoder、VAE、UNet、scheduler均冻结）
@@ -195,6 +195,7 @@ for epoch in range(num_epochs):
         # 注入 attribute vector 得到最终文本 embedding（作为条件）
         final_embeddings = get_final_embeddings(text_encoder, inputs["input_ids"],
                                                 attribute_vector=attribute_vector, pos=pos)
+        # encoder_hidden_states = text_encoder.text_model(input_ids=inputs["input_ids"] ,hidden_states=final_embeddings)[0]
 
         # 使用 VAE 将图像编码为 latent 表示
         with torch.no_grad():
@@ -242,7 +243,7 @@ for epoch in range(num_epochs):
     # -------------------------------
     # 7. 保存精调后的模型
     # -------------------------------
-    save_path = os.path.join(model_dir, f"vision_mapping_model_finetuned_epoch{num_epochs}.pt")
+    save_path = os.path.join(model_dir, f"vision_mapping_model_finetuned_epoch{epoch+1}.pt")
     torch.save(vision_mapping_model.state_dict(), save_path)
     print(f"Saved fine-tuned vision mapping model to {save_path}")
 
